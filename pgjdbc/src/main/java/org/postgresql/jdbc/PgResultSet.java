@@ -2023,12 +2023,16 @@ public class PgResultSet implements ResultSet, org.postgresql.PGRefCursorResultS
   }
 
   public int getInt(int columnIndex) throws SQLException {
+    System.out.println("CWR: 1getInt() " + wasNullFlag);
     checkResultSet(columnIndex);
+    System.out.println("CWR: 2getInt() " + wasNullFlag);
     if (wasNullFlag) {
       return 0; // SQL NULL
     }
 
     if (isBinary(columnIndex)) {
+      System.out.println("CWR: getInt() gone binary");
+      System.out.println("CWR: getInt() binary" + this_row.toString());
       int col = columnIndex - 1;
       int oid = fields[col].getOID();
       if (oid == Oid.INT4) {
@@ -2038,6 +2042,7 @@ public class PgResultSet implements ResultSet, org.postgresql.PGRefCursorResultS
     }
 
     Encoding encoding = connection.getEncoding();
+    System.out.println("CWR: getInt() encoding" + encoding);
     if (encoding.hasAsciiNumbers()) {
       try {
         return getFastInt(columnIndex);
@@ -2867,11 +2872,13 @@ public class PgResultSet implements ResultSet, org.postgresql.PGRefCursorResultS
   }
 
   public static BigDecimal toBigDecimal(String s) throws SQLException {
+    System.out.println("CWR: toBigDecimal(String) " + s);
     if (s == null) {
       return null;
     }
     try {
       s = s.trim();
+      System.out.println("CWR: toBigDecimal(String) trimmed " + s);
       return new BigDecimal(s);
     } catch (NumberFormatException e) {
       throw new PSQLException(GT.tr("Bad value for type {0} : {1}", "BigDecimal", s),
@@ -2888,6 +2895,7 @@ public class PgResultSet implements ResultSet, org.postgresql.PGRefCursorResultS
   }
 
   private BigDecimal scaleBigDecimal(BigDecimal val, int scale) throws PSQLException {
+    System.out.println("CWR: scaleBigDecimal(val, scale) " + val.toString() + ", " + scale);
     if (scale == -1) {
       return val;
     }
