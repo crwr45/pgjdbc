@@ -670,10 +670,12 @@ public class TypeInfoCache implements TypeInfo {
       case Oid.FLOAT8:
         return 17;
       case Oid.NUMERIC:
+        System.out.println("CWR: getScale() GOTCHA you bastard.: " + typmod);
         if (typmod == -1) {
           return 0;
         }
-        return (typmod - 4) & 0xFFFF;
+        int val = (typmod - 4) & 0xFFFF;
+        return val;
       case Oid.TIME:
       case Oid.TIMETZ:
       case Oid.TIMESTAMP:

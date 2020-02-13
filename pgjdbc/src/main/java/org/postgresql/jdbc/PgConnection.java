@@ -632,6 +632,7 @@ public class PgConnection implements BaseConnection {
   }
 
   public TypeInfo getTypeInfo() {
+    System.out.println("CWR: getTypeInfo(): " + _typeCache);
     return _typeCache;
   }
 

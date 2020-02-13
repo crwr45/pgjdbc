@@ -24,6 +24,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Types;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -1621,6 +1622,8 @@ public class PgDatabaseMetaData implements DatabaseMetaData {
       f[22] = new Field("IS_AUTOINCREMENT", Oid.VARCHAR);
     }
 
+    // System.out.println("CWR: getColumns(): " + Arrays.toString(f));
+
     String sql;
     if (connection.haveMinimumServerVersion(ServerVersion.v7_3)) {
       // a.attnum isn't decremented when preceding columns are dropped,
@@ -1705,6 +1708,8 @@ public class PgDatabaseMetaData implements DatabaseMetaData {
     }
     sql += " ORDER BY nspname,c.relname,attnum ";
 
+    System.out.println("CWR: getColumns() SQL: " + sql);
+
     Statement stmt = connection.createStatement();
     ResultSet rs = stmt.executeQuery(sql);
     while (rs.next()) {
@@ -1716,6 +1721,7 @@ public class PgDatabaseMetaData implements DatabaseMetaData {
       tuple[1] = rs.getBytes("nspname"); // Schema
       tuple[2] = rs.getBytes("relname"); // Table name
       tuple[3] = rs.getBytes("attname"); // Column name
+      System.out.println("CWR: getColumns() Colname: " + tuple[3].toString());
 
       String typtype = rs.getString("typtype");
       int sqlType;
@@ -1750,6 +1756,7 @@ public class PgDatabaseMetaData implements DatabaseMetaData {
       }
 
       int decimalDigits = connection.getTypeInfo().getScale(typeOid, typeMod);
+      System.out.println("CWR: getColumns(): getScale(): " + decimalDigits);
       int columnSize = connection.getTypeInfo().getPrecision(typeOid, typeMod);
       if (columnSize == 0) {
         columnSize = connection.getTypeInfo().getDisplaySize(typeOid, typeMod);
@@ -1757,6 +1764,7 @@ public class PgDatabaseMetaData implements DatabaseMetaData {
 
       tuple[6] = connection.encodeString(Integer.toString(columnSize));
       tuple[8] = connection.encodeString(Integer.toString(decimalDigits));
+      System.out.println("CWR: getColumns(): scale.toString()" + tuple[8]);
 
       // Everything is base 10 unless we override later.
       tuple[9] = connection.encodeString("10");
@@ -1794,6 +1802,8 @@ public class PgDatabaseMetaData implements DatabaseMetaData {
         }
         tuple[22] = connection.encodeString(autoinc);
       }
+
+      System.out.println("CWR: getColumns() tuple: " + Arrays.toString(tuple));
 
       v.add(tuple);
     }
