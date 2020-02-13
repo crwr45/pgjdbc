@@ -64,6 +64,7 @@ import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 //#endif
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -170,6 +171,7 @@ public class PgResultSet implements ResultSet, org.postgresql.PGRefCursorResultS
   }
 
   protected Object internalGetObject(int columnIndex, Field field) throws SQLException {
+    System.out.println("CWR: internalGetObject sqlType: " + getSQLType(columnIndex));
     switch (getSQLType(columnIndex)) {
       case Types.BOOLEAN:
         return getBoolean(columnIndex);
@@ -1871,6 +1873,8 @@ public class PgResultSet implements ResultSet, org.postgresql.PGRefCursorResultS
 
   public boolean wasNull() throws SQLException {
     checkClosed();
+
+    System.out.println("CWR: wasNull() " + wasNullFlag);
     return wasNullFlag;
   }
 
@@ -2023,16 +2027,13 @@ public class PgResultSet implements ResultSet, org.postgresql.PGRefCursorResultS
   }
 
   public int getInt(int columnIndex) throws SQLException {
-    System.out.println("CWR: 1getInt() " + wasNullFlag);
+    System.out.println("CWR: getInt(), start here");
     checkResultSet(columnIndex);
-    System.out.println("CWR: 2getInt() " + wasNullFlag);
     if (wasNullFlag) {
       return 0; // SQL NULL
     }
 
-    if (isBinary(columnIndex)) {
-      System.out.println("CWR: getInt() gone binary");
-      System.out.println("CWR: getInt() binary" + this_row.toString());
+    if (isBinary(columnIndex)) {      
       int col = columnIndex - 1;
       int oid = fields[col].getOID();
       if (oid == Oid.INT4) {
@@ -2042,14 +2043,21 @@ public class PgResultSet implements ResultSet, org.postgresql.PGRefCursorResultS
     }
 
     Encoding encoding = connection.getEncoding();
-    System.out.println("CWR: getInt() encoding" + encoding);
+    System.out.println("CWR: getInt() encoding: " + encoding);
     if (encoding.hasAsciiNumbers()) {
       try {
-        return getFastInt(columnIndex);
+        int val = getFastInt(columnIndex);
+        System.out.println("CWR: getInt() got fastint: " + val);
+        return val;
       } catch (NumberFormatException ex) {
+        System.out.println("CWR: getInt() caught fastint");
       }
     }
-    return toInt(getFixedString(columnIndex));
+    String strval = getFixedString(columnIndex);
+    System.out.println("CWR: getInt() got fixedstring: " + strval);
+    int val = toInt(strval);
+    System.out.println("CWR: getInt() got slowint: " + val);
+    return val;
   }
 
   public long getLong(int columnIndex) throws SQLException {
@@ -2161,6 +2169,13 @@ public class PgResultSet implements ResultSet, org.postgresql.PGRefCursorResultS
 
     byte[] bytes = this_row[columnIndex - 1];
 
+    System.out.print("CWR: getFastInt() bytes: ");
+    StringBuilder sb = new StringBuilder();
+    for (byte b : bytes) {
+        sb.append(String.format("%02X ", b));
+    }
+    System.out.println(sb.toString());
+
     if (bytes.length == 0) {
       throw FAST_NUMBER_FAILED;
     }
@@ -2183,13 +2198,16 @@ public class PgResultSet implements ResultSet, org.postgresql.PGRefCursorResultS
     }
 
     while (start < bytes.length) {
+      System.out.println("CWR: getFastInt() start: " + start);
       byte b = bytes[start++];
+      System.out.println("CWR: getFastInt() b: 0x" + String.format("%02X ", b));
       if (b < '0' || b > '9') {
         throw FAST_NUMBER_FAILED;
       }
 
       val *= 10;
       val += b - '0';
+      System.out.println("CWR: getFastInt() val: " + val);
     }
 
     if (neg) {
@@ -2774,7 +2792,17 @@ public class PgResultSet implements ResultSet, org.postgresql.PGRefCursorResultS
           PSQLState.INVALID_CURSOR_STATE);
     }
     checkColumnIndex(column);
+
     wasNullFlag = (this_row[column - 1] == null);
+    System.out.println("CWR: checkResultSet() row col: " + Arrays.toString(this_row[column - 1]));
+    System.out.print("CWR: checkResultSet() row col hex: ");
+    StringBuilder sb = new StringBuilder();
+    for (byte b : this_row[column - 1]) {
+        sb.append(String.format("%02X ", b));
+    }
+    System.out.println(sb.toString());
+
+    System.out.println("CWR: checkResultSet() wasNullFlag :" + wasNullFlag);
   }
 
   /**
